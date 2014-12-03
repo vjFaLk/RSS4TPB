@@ -22,7 +22,7 @@ __license__ = "Apache License 2.0"
 # Don't change this URL, unless you are absolutely sure about what you're doing
 __tpburl__  = "https://thepiratebay.se"
 
-def url_parser(search_string, force_most_recent, tpburl):
+def url_parser(search_string, force_most_seeds, tpburl):
 	# Splits the string (transforms it into a list and removes the empty items)
 	url = filter(None, search_string.split("/"))
 	# Checks if the URL starts with "search", "user" or "browse"
@@ -44,7 +44,7 @@ def url_parser(search_string, force_most_recent, tpburl):
 		except:
 			filters = "0"
 		# If pagination and ordination info is being preserved...
-		if not force_most_recent:
+		if not force_most_seeds:
 			# it tries to get these info from the URL
 			try:
 				pag = int(url[-3])
@@ -52,14 +52,14 @@ def url_parser(search_string, force_most_recent, tpburl):
 			# If the URL don't have these information, than we tell the program
 			# to ignore it and set "0" as filter
 			except:
-				force_most_recent = True
+				force_most_seeds = True
 				filters = "0"
 				link = " ".join(url[1:])
 		# If pagination and ordination info isn't being preserved (or the URL don't
 		# specifies it) it sets "0" to pagination and "3" to ordination
-		if force_most_recent:
+		if force_most_seeds:
 			pag = 0
-			order = 3
+			order = 7
 		return [url[0], link.decode("iso-8859-1").encode("utf8"), "/" + str(pag) + "/" + str(order) + "/" + filters + "/"]
 	# Checks if the user is trying to get feed from /recent
 	elif url[0] == "recent":
@@ -71,16 +71,17 @@ def url_parser(search_string, force_most_recent, tpburl):
 		return ["search", search_string.decode("iso-8859-1").encode("utf8"), "/0/7/0/"]
 	return None
 
-def open_url(input_string, force_most_recent, tpburl):
+def open_url(input_string, force_most_seeds, tpburl):
 	global soup, info, link
 	# Removes the domain from the input string (if a domain is specified)
 	search_string = re.sub(r">|<|#|&", "", re.sub(r"^(http(s)?://)?(www.)?" + re.sub(r"^http(s)?://", "", re.sub(r".[a-z]*(:[0-9]*)?$", "", tpburl)) + r".[a-z]*(:[0-9]*)?", "", input_string, flags=re.I))
 	# Parses the string and returns a valid URL
 	# (e.g. "/search/Suits/0/3/200")
-	info = url_parser(search_string.strip(), force_most_recent, tpburl)
+	info = url_parser(search_string.strip(), force_most_seeds, tpburl)
 	if info:
 		# Returns a full link for the page
 		link = tpburl + "/" + info[0] + "/" + info[1].decode("utf8").encode("iso-8859-1") + info[-1]
+		print link
 		# Tries to open the link
 		try:
 			page = urllib2.urlopen(link)
@@ -100,43 +101,6 @@ def open_url(input_string, force_most_recent, tpburl):
 			print >> sys.stderr, "The given URL is invalid:", input_string
 			exit(1)
 
-def open_file(input_file, force_most_recent, tpburl):
-	global soup, info, link
-	# Opens the file and parses it on Beautiful Soup
-	file = open(input_file)
-	soup = BeautifulSoup(file.read())
-	# Tries to extract information from the file content
-	try:
-		# Gets the canonical link of the page
-		link = str((soup.findAll("link", rel="canonical")[0])).split("\"")[1]
-		# Extracts the mirror used on the page
-		tpburl = re.search(r"^http(s)?://[\w|\.]+\.[\w|\.]+(:[0-9]+)?/", link).group(0)[:-1]
-		# Extracts the string of the search
-		search_string = re.sub(r">|<|#|&", "", re.sub(r"^(http(s)?://)?(www.)?" + re.sub(r"^http(s)?://", "", re.sub(r".[a-z]*(:[0-9]*)?$", "", tpburl)) + r".[a-z]*", "", link, flags=re.I))
-		# Parses the string and returns a valid URL
-		# (e.g. "/search/Manhattan/0/3/0")
-		info = url_parser(search_string.strip(), force_most_recent, tpburl)
-		# Returns a full link for the page
-		link = tpburl + "/" + info[0] + "/" + info[1].decode("utf8").encode("iso-8859-1") + info[-1]
-	# If not successful, raises an exception or prints an error and then exits with status 1
-	except Exception, err:
-		if exceptions:
-			raise Exception(err)
-		else:
-			print >> sys.stderr, "The given file is invalid:", input_file
-			exit(1)
-	file.close()
-
-def write_file(output_file, content):
-	# Tries to write the XML on a file
-	try:
-		file = open(output_file, "w")
-		file.write(content)
-		file.close()
-	# If not successful, prints an error and then exits with status 1
-	except Exception, err:
-		print >> sys.stderr, "Couldn't write file:", str(err)
-		exit(1)
 
 # This function converts the human-readable date (e.g. "7 mins ago",
 # "Today", "Y-day"...) into a RSS 2.0-valid date string.
@@ -275,14 +239,8 @@ def xml_constructor(soup, tpburl):
 	xml += "\n\t</channel>" + "\n</rss>"
 	return xml
 
-def xml_from_file(filename, force_most_recent=False, tpburl=__tpburl__):
-	# Opens the file, extracts the URL and other things
-	open_file(filename, force_most_recent, tpburl)
-	# Calls the constructor to create the whole XML
-	xml = xml_constructor(soup, tpburl)
-	return xml
 
-def xml_from_url(input_string, force_most_recent=True, tpburl=__tpburl__):
+def xml_from_url(input_string, force_most_seeds=True, tpburl=__tpburl__):
 	# Checks if the string is an URL so we can extract the domain and use it as a mirror
 	try:
 		tpburl = re.search(r"^http(s)?://[\w|\.]+\.[\w|\.]+(:[0-9]+)?/", input_string).group(0)[:-1]
@@ -290,11 +248,11 @@ def xml_from_url(input_string, force_most_recent=True, tpburl=__tpburl__):
 	except:
 		pass
 	# Downloads the page and extracts information
-	open_url(input_string, force_most_recent, tpburl)
+	open_url(input_string, force_most_seeds, tpburl)
 	# Calls the constructor to create the whole XML
 	xml = xml_constructor(soup, tpburl)
 	return xml
-
+	
 	
 @app.route('/')
 def Default():
@@ -302,10 +260,23 @@ def Default():
 
 @app.route('/<name>')
 def Output(name):
-	xml = xml_from_url(name)
-	return Response(xml, mimetype='text/xml')
+	if(name == "Movies"):
+		xml = xml_from_url("https://thepiratebay.se/browse/207/")
+		return Response(xml, mimetype='text/xml')
+	elif(name == "TV"):
+		xml = xml_from_url("https://thepiratebay.se/browse/208/")
+		return Response(xml, mimetype='text/xml')
+	elif(name == "Games"):
+		xml = xml_from_url("https://thepiratebay.se/browse/400/")
+		return Response(xml, mimetype='text/xml')
+	elif(name == "Music"):
+		xml = xml_from_url("https://thepiratebay.se/browse/101/")
+		return Response(xml, mimetype='text/xml')
+	else:
+		xml = xml_from_url(name)
+		return Response(xml, mimetype='text/xml')
 	
-
+	
 	
 if __name__ == "__main__":
 	app.debug = True
