@@ -7,14 +7,13 @@ import re
 import urllib
 import datetime
 import urllib2
-from flask import Response
-from flask import Flask
+from flask import Flask, Response, redirect
 
 app = Flask(__name__)
 
 
 # Project info
-__author__  = "Valmik Jangla	
+__author__  = "Valmik Jangla"
 __email__   = "mail@valmik.in"
 __version__ = "1.0"
 __docs__    = "https://github.com/vjFaLk/RSS4TPB/"
@@ -297,8 +296,18 @@ def xml_from_url(input_string, force_most_recent=True, tpburl=__tpburl__):
 	return xml
 
 	
+@app.route('/')
+def Default():
+	return redirect("https://github.com/vjFaLk/RSS4TPB", code=302)
 
 @app.route('/<name>')
 def Output(name):
 	xml = xml_from_url(name)
 	return Response(xml, mimetype='text/xml')
+	
+
+	
+if __name__ == "__main__":
+	app.debug = True
+	app.run()
+	
