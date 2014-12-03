@@ -244,7 +244,6 @@ def xml_from_url(input_string, force_most_seeds=True, tpburl=__tpburl__):
 	# Checks if the string is an URL so we can extract the domain and use it as a mirror
 	try:
 		tpburl = re.search(r"^http(s)?://[\w|\.]+\.[\w|\.]+(:[0-9]+)?/", input_string).group(0)[:-1]
-		print tpburl
 	except:
 		pass
 	# Downloads the page and extracts information
@@ -271,6 +270,9 @@ def Output(name):
 		return Response(xml, mimetype='text/xml')
 	elif(name == "Music"):
 		xml = xml_from_url("https://thepiratebay.se/browse/101/")
+		return Response(xml, mimetype='text/xml')
+	elif(name == "Porn"):
+		xml = xml_from_url("https://thepiratebay.se/browse/505/")
 		return Response(xml, mimetype='text/xml')
 	else:
 		xml = xml_from_url(name)
