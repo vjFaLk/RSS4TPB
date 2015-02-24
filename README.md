@@ -1,11 +1,11 @@
 RSS4TPB
 =======
 
-A Flask web app written in Python to generate RSS feeds from ThePirateBay and output as XML
+A Flask web app written in Python to generate RSS feeds from ThePirateBay search results.
 
 - Heavily based on the script made by Camporez -
 https://github.com/camporez/tpb2rss/blob/master/tpb2rss.py
-- It's modified(Quite haphazardly) to work with Flask as a web app on Google App Engine
+- It's modified (quite haphazardly) to work with Flask as a web app on Google App Engine
 - Used by my torrent searching app, QuickBit, to quickly look up torrents and download them.
 
 
